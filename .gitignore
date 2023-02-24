@@ -7,3 +7,7 @@
 
 # dotenv environment variables file
 .env
+
+# Services file and dirs
+/mongo
+/mongo_config
