@@ -5,6 +5,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { isDevelopmentMode } from "./config/general";
 import { buildMongoConfig } from "./config/mongo";
+import { UserModule } from "./user/user.module";
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { buildMongoConfig } from "./config/mongo";
       inject: [ConfigService],
       useFactory: buildMongoConfig,
     }),
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
