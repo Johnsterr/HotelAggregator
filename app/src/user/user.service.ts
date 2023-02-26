@@ -1,10 +1,15 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { MongoError } from "mongodb";
 import { IUser, IUserService, SearchUserParams } from "./user.types";
 import { User, UserDocument } from "./entities/user.entity";
 import { hashPassword } from "./lib/hashPassword";
+import type { SortType } from "./user.types";
 
 @Injectable()
 export class UserService implements IUserService {
@@ -58,35 +63,16 @@ export class UserService implements IUserService {
   }
 
   async findAll(params: SearchUserParams) {
-    const { email, limit, offset, name, contactPhone } = params;
+    const filterParams = this.constructFilterParamsForFindAll(params);
 
-    const aggr = email
-      ? { email }
-      : {
-          $and: [
-            { name: { $regex: new RegExp(name, "g") } },
-            { contactPhone: { $regex: new RegExp(contactPhone, "g") } },
-          ],
-        };
-    const aggrAns = await this.userModel
-      .aggregate([
-        {
-          $match: aggr,
-        },
-        {
-          $project: {
-            _id: 0,
-            id: "$_id",
-            email: 1,
-            name: 1,
-            contactPhone: 1,
-          },
-        },
-      ])
-      .skip(offset)
-      .limit(limit)
-      .exec();
-    return aggrAns;
+    try {
+      return await this.userModel.aggregate(filterParams).exec();
+    } catch (error) {
+      const { message } = error as MongoError;
+      throw new InternalServerErrorException("Internal server error", {
+        description: message,
+      });
+    }
   }
 
   // findOne(id: number) {
@@ -123,5 +109,63 @@ export class UserService implements IUserService {
       .exec();
 
     return aggrAns[0];
+  }
+
+  private constructFilterParamsForFindAll(
+    params: SearchUserParams,
+    sort: SortType = "asc",
+  ) {
+    const { email, limit, offset, name, contactPhone } = params;
+
+    const filterParams = [];
+    const matchingParams = [];
+
+    if (email) {
+      matchingParams.push({
+        email: { $regex: new RegExp(email, "gi") },
+      });
+    }
+
+    if (name) {
+      matchingParams.push({
+        name: { $regex: new RegExp(name, "gi") },
+      });
+    }
+
+    if (contactPhone) {
+      matchingParams.push({
+        contactPhone: { $regex: new RegExp(contactPhone, "gi") },
+      });
+    }
+
+    if (matchingParams.length > 0) {
+      filterParams.push({
+        $match: {
+          $or: matchingParams,
+        },
+      });
+    }
+
+    filterParams.push({ $sort: { name: sort === "asc" ? 1 : -1 } });
+
+    if (offset > 0) {
+      filterParams.push({ $skip: offset });
+    }
+
+    if (limit > 0) {
+      filterParams.push({ $limit: limit });
+    }
+
+    filterParams.push({
+      $project: {
+        _id: 0,
+        id: "$_id",
+        email: 1,
+        name: 1,
+        contactPhone: 1,
+      },
+    });
+
+    return filterParams;
   }
 }

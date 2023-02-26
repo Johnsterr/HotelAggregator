@@ -7,7 +7,6 @@ import {
   ValidationPipe,
   UsePipes,
   Query,
-  ExceptionFilter,
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -23,12 +22,28 @@ export class UserController {
       errorHttpStatusCode: HttpStatus.BAD_REQUEST,
     }),
   )
-  async create(@Body() body: CreateUserDto): Promise<User | ExceptionFilter> {
+  async create(@Body() body: CreateUserDto): Promise<User> {
     return this.userService.create(body);
   }
 
   @Get("/admin/users")
   findAll(
+    @Query("email") email?,
+    @Query("limit") limit?,
+    @Query("offset") offset?,
+    @Query("name") name?,
+    @Query("contactPhone") contactPhone?,
+  ): Promise<User[]> {
+    limit = limit ? parseInt(limit) : 0;
+    offset = offset ? parseInt(offset) : 0;
+
+    const params = { email, limit, offset, name, contactPhone };
+
+    return this.userService.findAll(params);
+  }
+
+  @Get("/manager/users")
+  findAllUsers(
     @Query("email") email?,
     @Query("limit") limit?,
     @Query("offset") offset?,

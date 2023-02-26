@@ -1,7 +1,7 @@
-import { ExceptionFilter } from "@nestjs/common";
 import type { UserId } from "src/types/general";
 
 export type UserRole = "client" | "admin" | "manager";
+export type SortType = "asc" | "desc";
 
 export interface IUser {
   _id?: UserId;
@@ -21,8 +21,8 @@ export interface SearchUserParams {
 }
 
 export interface IUserService {
-  create(data: Partial<IUser>): Promise<IUser | ExceptionFilter>;
+  create(data: Partial<IUser>): Promise<IUser>;
+  findAll(params: SearchUserParams): Promise<IUser[]>;
   //findById(id: UserId): Promise<IUser>;
   //findByEmail(email: string): Promise<IUser>;
-  //findAll(params: SearchUserParams): Promise<IUser[]>;
 }
