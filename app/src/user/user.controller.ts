@@ -3,15 +3,15 @@ import {
   Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
   HttpStatus,
   ValidationPipe,
   UsePipes,
+  Query,
+  ExceptionFilter,
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { CreateUserDto } from "./dto/create-user.dto";
+import { User } from "./entities/user.entity";
 
 @Controller("api")
 export class UserController {
@@ -23,14 +23,25 @@ export class UserController {
       errorHttpStatusCode: HttpStatus.BAD_REQUEST,
     }),
   )
-  create(@Body() body: CreateUserDto) {
+  async create(@Body() body: CreateUserDto): Promise<User | ExceptionFilter> {
     return this.userService.create(body);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.userService.findAll();
-  // }
+  @Get("/admin/users")
+  findAll(
+    @Query("email") email?,
+    @Query("limit") limit?,
+    @Query("offset") offset?,
+    @Query("name") name?,
+    @Query("contactPhone") contactPhone?,
+  ): Promise<User[]> {
+    limit = limit ? parseInt(limit) : 0;
+    offset = offset ? parseInt(offset) : 0;
+
+    const params = { email, limit, offset, name, contactPhone };
+
+    return this.userService.findAll(params);
+  }
 
   // @Get(":id")
   // findOne(@Param("id") id: string) {
