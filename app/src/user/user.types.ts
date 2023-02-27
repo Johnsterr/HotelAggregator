@@ -1,5 +1,6 @@
-import type { UserId } from "src/types/general";
+import { ObjectId } from "mongoose";
 
+export type UserId = string | ObjectId;
 export type UserRole = "client" | "admin" | "manager";
 export type SortType = "asc" | "desc";
 
@@ -23,6 +24,6 @@ export interface SearchUserParams {
 export interface IUserService {
   create(data: Partial<IUser>): Promise<IUser>;
   findAll(params: SearchUserParams): Promise<IUser[]>;
-  //findById(id: UserId): Promise<IUser>;
-  //findByEmail(email: string): Promise<IUser>;
+  findById(id: UserId): Promise<IUser>;
+  findByEmail(email: string): Promise<IUser>;
 }

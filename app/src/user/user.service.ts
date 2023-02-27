@@ -10,12 +10,13 @@ import { IUser, IUserService, SearchUserParams } from "./user.types";
 import { User, UserDocument } from "./entities/user.entity";
 import { hashPassword } from "./lib/hashPassword";
 import type { SortType } from "./user.types";
+import type { UserId } from "./user.types";
 
 @Injectable()
 export class UserService implements IUserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(data: IUser) {
+  async create(data: IUser): Promise<User> {
     const { email, password, name, contactPhone, role } = data;
     const hashedPassword = await hashPassword(password);
 
@@ -31,38 +32,13 @@ export class UserService implements IUserService {
       return await this.aggregateNewUserData(createdUser);
     } catch (error) {
       const { message } = error as MongoError;
-      //console.log(error);
       throw new BadRequestException("User not created", {
         description: message,
       });
-
-      // console.log(error.message);
-      // console.log(error.name);
-      // console.log(error.code);
-      // console.log(error.errmsg);
-      // console.log(error.errorLabels);
     }
-
-    // if (createdUser) {
-    //   return await this.aggregateNewUserData(createdUser);
-    // }
-
-    // return {
-    //   statusCode: HttpStatus.BAD_REQUEST,
-    //   errors: [],
-    //   message: `User with ${data} not created`,
-    // };
-
-    // const createdUser = await this.saveUserIntoDb({
-    //   email,
-    //   password: hashedPassword,
-    //   name,
-    //   contactPhone,
-    //   role,
-    // });
   }
 
-  async findAll(params: SearchUserParams) {
+  async findAll(params: SearchUserParams): Promise<User[]> {
     const filterParams = this.constructFilterParamsForFindAll(params);
 
     try {
@@ -75,20 +51,42 @@ export class UserService implements IUserService {
     }
   }
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} user`;
-  // }
+  async findByEmail(email: string): Promise<User> {
+    try {
+      const createdUser = await this.findUserByEmailFromDb(email);
 
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
+      return await this.aggregateFindedUserData(createdUser);
+    } catch (error) {
+      const { message } = error as MongoError;
+      throw new BadRequestException("User not found", {
+        description: message,
+      });
+    }
+  }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} user`;
-  // }
+  async findById(id: UserId): Promise<User> {
+    try {
+      const createdUser = await this.findUserByIdFromDb(id);
+
+      return await this.aggregateFindedUserData(createdUser);
+    } catch (error) {
+      const { message } = error as MongoError;
+      throw new BadRequestException("User not found", {
+        description: message,
+      });
+    }
+  }
 
   private async saveUserIntoDb(userData: IUser) {
     return await new this.userModel(userData).save();
+  }
+
+  private async findUserByEmailFromDb(email: string) {
+    return await this.userModel.findOne({ email: email }).exec();
+  }
+
+  private async findUserByIdFromDb(id: UserId) {
+    return await this.userModel.findById(id).exec();
   }
 
   private async aggregateNewUserData(userData: IUser) {
@@ -167,5 +165,25 @@ export class UserService implements IUserService {
     });
 
     return filterParams;
+  }
+
+  private async aggregateFindedUserData(userData: IUser) {
+    const aggrAns = await this.userModel
+      .aggregate([
+        { $match: { _id: userData._id } },
+        {
+          $project: {
+            _id: 0,
+            id: "$_id",
+            email: 1,
+            name: 1,
+            contactPhone: 1,
+            role: 1,
+          },
+        },
+      ])
+      .exec();
+
+    return aggrAns[0];
   }
 }
