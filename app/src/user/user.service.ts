@@ -176,6 +176,7 @@ export class UserService implements IUserService {
             _id: 0,
             id: "$_id",
             email: 1,
+            password: 1,
             name: 1,
             contactPhone: 1,
             role: 1,
