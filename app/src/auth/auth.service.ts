@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import { compare } from "bcrypt";
 import { LoginAuthDto } from "./dto/login-auth.dto";
 import { UserService } from "src/user/user.service";
@@ -6,10 +7,17 @@ import { User } from "src/user/entities/user.entity";
 
 @Injectable()
 export class AuthService {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private jwtService: JwtService,
+  ) {}
 
-  login(loginAuthDto: LoginAuthDto) {
-    return "This action adds a new auth";
+  login(user: any) {
+    const payload = { username: user.name, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+      ...user,
+    };
   }
 
   logout() {

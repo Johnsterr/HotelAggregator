@@ -23,7 +23,7 @@ export class AuthController {
     }),
   )
   login(@Request() req) {
-    return req.user;
+    return this.authService.login(req.user);
   }
 
   @Post("/auth/logout")
