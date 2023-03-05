@@ -5,6 +5,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { isDevelopmentMode } from "./config/general";
 import { buildMongoConfig } from "./config/mongo";
+import { HotelModule } from "./hotel/hotel.module";
 import { UserModule } from "./user/user.module";
 import { AuthModule } from "./auth/auth.module";
 
@@ -18,6 +19,7 @@ import { AuthModule } from "./auth/auth.module";
       inject: [ConfigService],
       useFactory: buildMongoConfig,
     }),
+    HotelModule,
     AuthModule,
     UserModule,
   ],
