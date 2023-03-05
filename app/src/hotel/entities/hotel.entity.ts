@@ -6,8 +6,12 @@ export type HotelDocument = Hotel & Document;
 @Schema()
 export class Hotel {
   // ** Note **
-  @Prop({ required: true, unique: true })
-  public _id: Types.ObjectId = new mongoose.Types.ObjectId();
+  // @Prop({
+  //   required: true,
+  //   unique: true,
+  //   default: new mongoose.Types.ObjectId(),
+  // })
+  // public _id: Types.ObjectId;
 
   @Prop({ required: true })
   public title: string;
@@ -15,11 +19,11 @@ export class Hotel {
   @Prop()
   public description: string;
 
-  @Prop({ required: true })
-  public createdAt: Date = new Date();
+  @Prop({ required: true, default: new Date() })
+  public createdAt: Date;
 
-  @Prop({ required: true })
-  public updatedAt: Date = new Date();
+  @Prop({ required: true, default: new Date() })
+  public updatedAt: Date;
 }
 
 export const HotelSchema = SchemaFactory.createForClass(Hotel);

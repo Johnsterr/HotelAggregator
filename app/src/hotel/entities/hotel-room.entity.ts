@@ -7,8 +7,12 @@ export type HotelRoomDocument = HotelRoom & Document;
 @Schema()
 export class HotelRoom {
   // ** Note **
-  @Prop({ required: true, unique: true })
-  public _id: Types.ObjectId = new mongoose.Types.ObjectId();
+  // @Prop({
+  //   required: true,
+  //   unique: true,
+  //   default: new mongoose.Types.ObjectId(),
+  // })
+  // public _id: Types.ObjectId;
 
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "Hotel" })
   public hotel: Hotel;
@@ -16,14 +20,14 @@ export class HotelRoom {
   @Prop()
   public description: string;
 
-  @Prop({ default: [] })
+  @Prop({ type: [String], default: [] })
   public images: string[];
 
-  @Prop({ required: true })
-  public createdAt: Date = new Date();
+  @Prop({ required: true, default: new Date() })
+  public createdAt: Date;
 
-  @Prop({ required: true })
-  public updatedAt: Date = new Date();
+  @Prop({ required: true, default: new Date() })
+  public updatedAt: Date;
 
   @Prop({ required: true, default: true })
   public isEnabled: boolean;
