@@ -3,3 +3,4 @@ dist
 test
 Dockerfile.dev
 Dockerfile.prod
+upload

@@ -11,3 +11,6 @@
 # Services file and dirs
 /mongo
 /mongo_config
+
+# Upload
+/app/upload
