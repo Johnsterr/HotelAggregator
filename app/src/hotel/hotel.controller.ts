@@ -39,8 +39,23 @@ export class HotelController {
   }
 
   // JWT & AdminRole Guards
+  @Get("/admin/hotels/:id")
+  async getHotelById(@Param() params) {
+    const id = params.id;
+    return await this.hotelService.findById(id);
+  }
+
+  // JWT & AdminRole Guards
+  @Get("/admin/hotels/")
+  async getAllHotels(@Query("limit") limit?, @Query("offset") offset?) {
+    limit = limit ? parseInt(limit) : 100;
+    offset = offset ? parseInt(offset) : 0;
+    return await this.hotelService.search({ limit, offset });
+  }
+
+  // JWT & AdminRole Guards
   @Put("/admin/hotels/:id")
-  async changeTheHotelDesc(
+  async updateHotel(
     @Param() params,
     @Body() hotel: { title: string; description: string },
   ) {

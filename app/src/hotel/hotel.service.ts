@@ -1,11 +1,6 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { MongoError } from "mongodb";
 import { IHotelService, UpdateHotelParams } from "./hotel.types";
 import { Hotel, HotelDocument } from "./entities/hotel.entity";
 import { CreateHotelDto } from "./dto/create-hotel.dto";
@@ -29,8 +24,27 @@ export class HotelService implements IHotelService {
     ]);
     return answer[0];
   }
-  //findById(id: ID): Promise<Hotel> {}
-  //search(params: SearchHotelParams): Promise<Hotel[]> {}
+
+  async findById(id: ID): Promise<Hotel> {
+    const findedHotel = await this.hotelModel.findById(id);
+    const answer = await this.hotelModel.aggregate([
+      { $match: { _id: findedHotel._id } },
+      { $project: { _id: 0, id: "$_id", title: 1, description: 1 } },
+    ]);
+    return answer[0];
+  }
+
+  async search(params): Promise<Hotel[]> {
+    const { limit, offset } = params;
+    return await this.hotelModel
+      .aggregate([
+        { $project: { _id: 0, id: "$_id", title: 1, description: 1 } },
+      ])
+      .skip(offset)
+      .limit(limit)
+      .exec();
+  }
+
   async update(id: ID, data: UpdateHotelParams): Promise<Hotel> {
     const { title, description } = data;
     const findedHotel = await this.hotelModel.findOneAndUpdate(
