@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { MongoError } from "mongodb";
 import { IHotelRoomService, SearchRoomsParams } from "./hotel.types";
 import { HotelRoom, HotelRoomDocument } from "./entities/hotel-room.entity";
@@ -76,6 +76,44 @@ export class HotelRoomService implements IHotelRoomService {
     ]);
     return answer[0];
   }
-  //search(params: SearchRoomsParams): Promise<HotelRoom[]> {}
+
+  async search(params: SearchRoomsParams): Promise<HotelRoom[]> {
+    let { hotel } = params;
+    const { limit, offset, isEnabled } = params;
+    const ObjectId = mongoose.Types.ObjectId;
+    hotel = hotel ? new ObjectId(hotel) : { $exists: true };
+
+    return await this.hotelRoomModel
+      .aggregate([
+        { $match: { hotel } },
+        {
+          $lookup: {
+            from: "hotels",
+            localField: "hotel",
+            foreignField: "_id",
+            as: "result",
+          },
+        },
+        { $unwind: "$result" },
+        {
+          $project: {
+            _id: 0,
+            id: "$_id",
+            title: 1,
+            description: 1,
+            images: 1,
+            hotel: {
+              id: "$result._id",
+              title: "$result.title",
+              description: "$result.description",
+            },
+          },
+        },
+      ])
+      .skip(offset)
+      .limit(limit)
+      .exec();
+  }
+
   //update(id: ID, data: Partial<HotelRoom>): Promise<HotelRoom> {}
 }

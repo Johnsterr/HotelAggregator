@@ -98,4 +98,22 @@ export class HotelController {
     const id = params.id;
     return await this.hotelRoomService.findById(id);
   }
+
+  // JWT & AdminRole Guards
+  @Get("/admin/hotel-rooms/")
+  async getAllHotelRooms(
+    @Query("hotel") hotel?,
+    @Query("limit") limit?,
+    @Query("offset") offset?,
+  ) {
+    limit = limit ? parseInt(limit) : 100;
+    offset = offset ? parseInt(offset) : 0;
+    const isEnabled = true;
+    return await this.hotelRoomService.search({
+      hotel,
+      limit,
+      offset,
+      isEnabled,
+    });
+  }
 }
