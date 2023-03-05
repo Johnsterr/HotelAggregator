@@ -29,7 +29,7 @@ export interface SearchRoomsParams {
 
 export interface IHotelRoomService {
   create(data: Partial<HotelRoom>): Promise<HotelRoom>;
-  // findById(id: ID): Promise<HotelRoom>;
+  findById(id: ID): Promise<HotelRoom>;
   // search(params: SearchRoomsParams): Promise<HotelRoom[]>;
   // update(id: ID, data: Partial<HotelRoom>): Promise<HotelRoom>;
 }

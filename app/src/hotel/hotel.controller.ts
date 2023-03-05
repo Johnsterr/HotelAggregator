@@ -92,4 +92,10 @@ export class HotelController {
       isEnabled,
     });
   }
+
+  @Get("/admin/hotel-rooms/:id")
+  async getHotelRoomById(@Param() params) {
+    const id = params.id;
+    return await this.hotelRoomService.findById(id);
+  }
 }

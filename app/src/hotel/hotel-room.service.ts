@@ -4,6 +4,7 @@ import { Model } from "mongoose";
 import { MongoError } from "mongodb";
 import { IHotelRoomService, SearchRoomsParams } from "./hotel.types";
 import { HotelRoom, HotelRoomDocument } from "./entities/hotel-room.entity";
+import { ID } from "src/types/general";
 
 @Injectable()
 export class HotelRoomService implements IHotelRoomService {
@@ -47,7 +48,34 @@ export class HotelRoomService implements IHotelRoomService {
       ])
       .exec();
   }
-  //findById(id: ID): Promise<HotelRoom> {}
+
+  async findById(id: ID): Promise<HotelRoom> {
+    const findedHotelRoom = await this.hotelRoomModel.findById(id);
+    const answer = await this.hotelRoomModel.aggregate([
+      { $match: { _id: findedHotelRoom._id } },
+      {
+        $lookup: {
+          from: "hotels",
+          localField: "hotel",
+          foreignField: "_id",
+          as: "result",
+        },
+      },
+      { $unwind: "$result" },
+      {
+        $project: {
+          _id: 0,
+          id: "$_id",
+          title: 1,
+          description: 1,
+          images: 1,
+          isEnabled: 1,
+          hotel: { id: "$result._id", title: "$result.title" },
+        },
+      },
+    ]);
+    return answer[0];
+  }
   //search(params: SearchRoomsParams): Promise<HotelRoom[]> {}
   //update(id: ID, data: Partial<HotelRoom>): Promise<HotelRoom> {}
 }
