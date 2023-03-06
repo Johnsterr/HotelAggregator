@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
-import { MongoError } from "mongodb";
 import { IHotelRoomService, SearchRoomsParams } from "./hotel.types";
 import { HotelRoom, HotelRoomDocument } from "./entities/hotel-room.entity";
 import { ID } from "src/types/general";
@@ -42,7 +41,11 @@ export class HotelRoomService implements IHotelRoomService {
             id: "$_id",
             description: 1,
             images: 1,
-            hotel: { id: "$result._id", title: "$result.title" },
+            hotel: {
+              id: "$result._id",
+              title: "$result.title",
+              description: "$result.description",
+            },
           },
         },
       ])
@@ -66,11 +69,14 @@ export class HotelRoomService implements IHotelRoomService {
         $project: {
           _id: 0,
           id: "$_id",
-          title: 1,
           description: 1,
           images: 1,
           isEnabled: 1,
-          hotel: { id: "$result._id", title: "$result.title" },
+          hotel: {
+            id: "$result._id",
+            title: "$result.title",
+            description: "$result.description",
+          },
         },
       },
     ]);
@@ -99,7 +105,6 @@ export class HotelRoomService implements IHotelRoomService {
           $project: {
             _id: 0,
             id: "$_id",
-            title: 1,
             description: 1,
             images: 1,
             hotel: {
@@ -115,5 +120,47 @@ export class HotelRoomService implements IHotelRoomService {
       .exec();
   }
 
-  //update(id: ID, data: Partial<HotelRoom>): Promise<HotelRoom> {}
+  async update(id: ID, data: Partial<HotelRoom>): Promise<HotelRoom | any> {
+    const { description, hotel, images, isEnabled } = data;
+    const findedHotelRoom = await this.hotelRoomModel.findOneAndUpdate(
+      { _id: id },
+      {
+        hotel,
+        description,
+        images,
+        isEnabled,
+      },
+      { upsert: true, useFindAndModify: false },
+    );
+    const answer = await this.hotelRoomModel
+      .aggregate([
+        { $match: { _id: findedHotelRoom._id } },
+        {
+          $lookup: {
+            from: "hotels",
+            localField: "hotel",
+            foreignField: "_id",
+            as: "result",
+          },
+        },
+        { $unwind: "$result" },
+        {
+          $project: {
+            _id: 0,
+            id: "$_id",
+            description: 1,
+            images: 1,
+            isEnabled: 1,
+            hotel: {
+              id: "$result._id",
+              title: "$result.title",
+              description: "$result.description",
+            },
+          },
+        },
+      ])
+      .exec();
+
+    return answer[0];
+  }
 }
