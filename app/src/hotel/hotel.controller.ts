@@ -12,7 +12,6 @@ import {
   ValidationPipe,
 } from "@nestjs/common";
 import { FilesInterceptor } from "@nestjs/platform-express";
-import { ObjectId } from "mongoose";
 import { diskStorage } from "multer";
 import { HotelService } from "./hotel.service";
 import { HotelRoomService } from "./hotel-room.service";
@@ -26,6 +25,29 @@ export class HotelController {
     private readonly hotelService: HotelService,
     private readonly hotelRoomService: HotelRoomService,
   ) {}
+
+  @Get("/common/hotel-rooms")
+  async getAllRooms(
+    @Query("hotel") hotel?,
+    @Query("limit") limit?,
+    @Query("offset") offset?,
+  ) {
+    limit = limit ? parseInt(limit) : 100;
+    offset = offset ? parseInt(offset) : 0;
+    const isEnabled = true;
+    return await this.hotelRoomService.search({
+      hotel,
+      limit,
+      offset,
+      isEnabled,
+    });
+  }
+
+  @Get("/common/hotel-rooms/:id")
+  async getHotelRoom(@Param() params) {
+    const id = params.id;
+    return await this.hotelRoomService.findById(id);
+  }
 
   /*
       Hotels
@@ -93,6 +115,7 @@ export class HotelController {
     });
   }
 
+  // JWT & AdminRole Guards
   @Get("/admin/hotel-rooms/:id")
   async getHotelRoomById(@Param() params) {
     const id = params.id;
@@ -113,6 +136,35 @@ export class HotelController {
       hotel,
       limit,
       offset,
+      isEnabled,
+    });
+  }
+
+  // JWT & AdminRole Guards
+  @Put("/admin/hotel-rooms/:id")
+  @UseInterceptors(
+    FilesInterceptor("images", 5, {
+      storage: diskStorage({
+        destination: "./upload/rooms-imgs",
+        filename: editFileName,
+      }),
+      fileFilter: imageFileFilter,
+    }),
+  )
+  async updateHotelRoom(
+    @Param() params,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Body() body,
+  ) {
+    const isEnabled = true;
+    const images = files.map((file) => file.path);
+    const id = params.id;
+    const { description, hotelId } = body;
+    const hotel = hotelId;
+    return await this.hotelRoomService.update(id, {
+      description,
+      hotel,
+      images,
       isEnabled,
     });
   }
