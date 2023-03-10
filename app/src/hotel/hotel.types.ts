@@ -1,11 +1,30 @@
-import type { ID } from "src/types/general";
+import { IsOptional, IsString } from "class-validator";
+import { ID, SearchBaseParams } from "src/types/general";
 import { Hotel } from "./entities/hotel.entity";
 import { HotelRoom } from "./entities/hotel-room.entity";
 
-export interface SearchHotelParams {
-  limit: number;
-  offset: number;
+export interface IHotel {
+  _id: ID;
   title: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IHotelRoom {
+  _id: ID;
+  hotel: Hotel;
+  description?: string;
+  images?: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  isEnabled: boolean;
+}
+
+export class SearchHotelParams extends SearchBaseParams {
+  @IsOptional()
+  @IsString()
+  title?: string;
 }
 
 export interface UpdateHotelParams {

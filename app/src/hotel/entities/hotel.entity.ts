@@ -1,28 +1,21 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose, { Document, Types } from "mongoose";
+import { Document } from "mongoose";
+import { IHotel } from "../hotel.types";
 
 export type HotelDocument = Hotel & Document;
 
 @Schema()
-export class Hotel {
-  // ** Note **
-  // @Prop({
-  //   required: true,
-  //   unique: true,
-  //   default: new mongoose.Types.ObjectId(),
-  // })
-  // public _id: Types.ObjectId;
-
+export class Hotel implements Omit<IHotel, "_id"> {
   @Prop({ required: true })
   public title: string;
 
   @Prop()
   public description: string;
 
-  @Prop({ required: true, default: new Date() })
+  @Prop({ required: true, default: new Date().toISOString() })
   public createdAt: Date;
 
-  @Prop({ required: true, default: new Date() })
+  @Prop({ required: true, default: new Date().toISOString() })
   public updatedAt: Date;
 }
 

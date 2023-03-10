@@ -1,10 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { IHotelService, UpdateHotelParams } from "./hotel.types";
+import { IHotelService, SearchHotelParams } from "./hotel.types";
 import { Hotel, HotelDocument } from "./entities/hotel.entity";
 import { CreateHotelDto } from "./dto/create-hotel.dto";
 import { ID } from "src/types/general";
+import { UpdateHotelDto } from "./dto/update-hotel.dto";
+import { selectingHotelParams } from "./hotel.constants";
 
 @Injectable()
 export class HotelService implements IHotelService {
@@ -12,53 +14,30 @@ export class HotelService implements IHotelService {
     @InjectModel(Hotel.name) private hotelModel: Model<HotelDocument>,
   ) {}
 
-  async create(hotelData: CreateHotelDto): Promise<Hotel> {
-    const { title, description } = hotelData;
-    const hotel = new this.hotelModel({ title, description });
-
-    const createdHotel = await hotel.save();
-
-    const answer = await this.hotelModel.aggregate([
-      { $match: { _id: createdHotel._id } },
-      { $project: { _id: 0, id: "$_id", title: 1, description: 1 } },
-    ]);
-    return answer[0];
+  async create(dto: CreateHotelDto): Promise<Hotel> {
+    return await this.hotelModel.create(dto);
   }
 
   async findById(id: ID): Promise<Hotel> {
-    const findedHotel = await this.hotelModel.findById(id);
-    const answer = await this.hotelModel.aggregate([
-      { $match: { _id: findedHotel._id } },
-      { $project: { _id: 0, id: "$_id", title: 1, description: 1 } },
-    ]);
-    return answer[0];
+    return await this.hotelModel.findById(id);
   }
 
-  async search(params): Promise<Hotel[]> {
-    const { limit, offset } = params;
+  async search(params: SearchHotelParams): Promise<Hotel[]> {
+    const { title, limit = 40, offset = 0 } = params;
+    const searchParams: { title?: { $regex: string } } = {};
+
+    if (title) {
+      searchParams.title = { $regex: title };
+    }
+
     return await this.hotelModel
-      .aggregate([
-        { $project: { _id: 0, id: "$_id", title: 1, description: 1 } },
-      ])
-      .skip(offset)
+      .find(searchParams)
       .limit(limit)
-      .exec();
+      .skip(offset)
+      .select(selectingHotelParams);
   }
 
-  async update(id: ID, data: UpdateHotelParams): Promise<Hotel> {
-    const { title, description } = data;
-    const findedHotel = await this.hotelModel.findOneAndUpdate(
-      { _id: id },
-      {
-        title,
-        description,
-      },
-      { upsert: true, useFindAndModify: false },
-    );
-    const answer = await this.hotelModel.aggregate([
-      { $match: { _id: findedHotel._id } },
-      { $project: { _id: 0, id: "$_id", title: 1, description: 1 } },
-    ]);
-    return answer[0];
+  async update(id: ID, dto: UpdateHotelDto): Promise<Hotel> {
+    return await this.hotelModel.findOneAndUpdate({ _id: id }, dto);
   }
 }
