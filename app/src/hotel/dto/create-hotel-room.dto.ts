@@ -1,11 +1,7 @@
-import { IsDefined, IsNotEmpty, IsOptional } from "class-validator";
-import { Hotel } from "../entities/hotel.entity";
+import { ID } from "src/types/general";
 
 export class CreateHotelRoomDto {
-  @IsDefined()
-  @IsNotEmpty()
-  hotelId: Hotel;
-
-  @IsOptional()
-  description: string;
+  hotel: ID;
+  description?: string;
+  images?: string[];
 }

@@ -2,6 +2,7 @@ import { IsOptional, IsString } from "class-validator";
 import { ID, SearchBaseParams } from "src/types/general";
 import { Hotel } from "./entities/hotel.entity";
 import { HotelRoom } from "./entities/hotel-room.entity";
+import { CreateHotelRoomDto } from "./dto/create-hotel-room.dto";
 
 export interface IHotel {
   _id: ID;
@@ -9,6 +10,24 @@ export interface IHotel {
   description?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export class SearchHotelParams extends SearchBaseParams {
+  @IsOptional()
+  @IsString()
+  title?: string;
+}
+
+interface UpdateHotelParams {
+  title: string;
+  description: string;
+}
+
+export interface IHotelService {
+  create(data: Partial<Hotel>): Promise<Hotel>;
+  findById(id: ID): Promise<Hotel>;
+  search(params: SearchHotelParams): Promise<Hotel[]>;
+  update(id: ID, data: UpdateHotelParams): Promise<Hotel>;
 }
 
 export interface IHotelRoom {
@@ -21,34 +40,14 @@ export interface IHotelRoom {
   isEnabled: boolean;
 }
 
-export class SearchHotelParams extends SearchBaseParams {
-  @IsOptional()
-  @IsString()
-  title?: string;
-}
-
-export interface UpdateHotelParams {
-  title: string;
-  description: string;
-}
-
-export interface IHotelService {
-  create(data: any): Promise<Hotel>;
-  findById(id: ID): Promise<Hotel>;
-  search(params: SearchHotelParams): Promise<Hotel[]>;
-  update(id: ID, data: UpdateHotelParams): Promise<Hotel>;
-}
-
-export interface SearchRoomsParams {
-  limit: number;
-  offset: number;
-  hotel: any;
+export class SearchRoomsParams extends SearchBaseParams {
+  hotel?: ID;
   isEnabled?: boolean;
 }
 
 export interface IHotelRoomService {
-  create(data: Partial<HotelRoom>): Promise<HotelRoom>;
+  create(dto: CreateHotelRoomDto): Promise<HotelRoom>;
   findById(id: ID): Promise<HotelRoom>;
-  search(params: SearchRoomsParams): Promise<HotelRoom[]>;
-  update(id: ID, data: Partial<HotelRoom>): Promise<HotelRoom>;
+  search(query: SearchRoomsParams): Promise<HotelRoom[]>;
+  update(id: ID, dto: Partial<CreateHotelRoomDto>): Promise<HotelRoom>;
 }
