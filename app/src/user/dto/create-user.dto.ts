@@ -5,6 +5,7 @@ import {
   IsEmail,
   IsNotEmpty,
 } from "class-validator";
+import { UserRole } from "../user.types";
 
 export class CreateUserDto {
   @IsDefined()
@@ -16,17 +17,14 @@ export class CreateUserDto {
   @IsString()
   password: string;
 
-  @IsDefined()
-  @IsNotEmpty()
   @IsString()
   name: string;
 
   @IsOptional()
   @IsString()
-  contactPhone: string;
+  contactPhone?: string;
 
-  @IsDefined()
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  role: string;
+  role?: UserRole;
 }

@@ -1,15 +1,12 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose, { Document, Types } from "mongoose";
+import { Document } from "mongoose";
+import { IUser, UserRole } from "../user.types";
 
 export type UserDocument = User & Document;
 
 @Schema()
-export class User {
-  // ** Note **
-  // @Prop({ required: true, unique: true })
-  // _id: Types.ObjectId = new mongoose.Types.ObjectId();
-
-  @Prop({ required: true, unique: true })
+export class User implements Omit<IUser, "_id"> {
+  @Prop({ required: true, unique: true, type: String })
   public email: string;
 
   @Prop({ required: true })
@@ -18,11 +15,11 @@ export class User {
   @Prop({ required: true })
   public name: string;
 
-  @Prop({ default: "" })
+  @Prop({ type: String, default: "" })
   public contactPhone: string;
 
-  @Prop({ required: true, default: "client" })
-  public role: string;
+  @Prop({ required: true, type: String, default: "client" })
+  public role: UserRole;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -1,190 +1,128 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { MongoError } from "mongodb";
-import { IUser, IUserService, SearchUserParams } from "./user.types";
+import {
+  IUser,
+  IUserService,
+  SearchUserParams,
+  UserSearchParams,
+} from "./user.types";
 import { User, UserDocument } from "./entities/user.entity";
 import { hashPassword } from "./lib/hashPassword";
-import type { SortType } from "./user.types";
-import type { UserId } from "./user.types";
+import type { ID } from "src/types/general";
+import { CreateUserDto } from "./dto/create-user.dto";
+import { EXCEPTION_USER_ERRORS, selectingUserParams } from "./user.constants";
 
 @Injectable()
 export class UserService implements IUserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(data: IUser): Promise<User> {
+  async create(data: CreateUserDto): Promise<IUser> {
     const { email, password, name, contactPhone, role } = data;
     const hashedPassword = await hashPassword(password);
 
-    try {
-      const createdUser = await this.saveUserIntoDb({
-        email,
-        password: hashedPassword,
-        name,
-        contactPhone,
-        role,
-      });
+    const userData = {
+      email,
+      password: hashedPassword,
+      name,
+      contactPhone,
+      role,
+    };
 
-      return await this.aggregateNewUserData(createdUser);
+    try {
+      return await this.userModel.create(userData);
     } catch (error) {
       const { message } = error as MongoError;
-      throw new BadRequestException("User not created", {
+      throw new BadRequestException(EXCEPTION_USER_ERRORS.NOT_CREATED, {
         description: message,
       });
     }
   }
 
-  async findAll(params: SearchUserParams): Promise<User[]> {
+  async findAll(params: SearchUserParams): Promise<IUser[]> {
+    const { limit = 40, offset = 0 } = params;
     const filterParams = this.constructFilterParamsForFindAll(params);
 
     try {
-      return await this.userModel.aggregate(filterParams).exec();
+      return await this.userModel
+        .find(filterParams)
+        .skip(offset)
+        .limit(limit)
+        .select(selectingUserParams)
+        .exec();
     } catch (error) {
       const { message } = error as MongoError;
-      throw new InternalServerErrorException("Internal server error", {
-        description: message,
-      });
+      throw new BadRequestException(
+        EXCEPTION_USER_ERRORS.INTERNAL_SERVER_ERROR,
+        {
+          description: message,
+        },
+      );
     }
   }
 
-  async findByEmail(email: string): Promise<User> {
+  async findByEmail(email: string): Promise<IUser> {
     try {
-      const createdUser = await this.findUserByEmailFromDb(email);
+      const findedUser = await this.userModel.findOne({ email });
 
-      return await this.aggregateFindedUserData(createdUser);
+      if (findedUser) {
+        return findedUser;
+      }
+
+      throw new BadRequestException(EXCEPTION_USER_ERRORS.NOT_FOUND);
     } catch (error) {
       const { message } = error as MongoError;
-      throw new BadRequestException("User not found", {
-        description: message,
-      });
+      throw new BadRequestException(
+        EXCEPTION_USER_ERRORS.INTERNAL_SERVER_ERROR,
+        {
+          description: message,
+        },
+      );
     }
   }
 
-  async findById(id: UserId): Promise<User> {
+  async findById(id: ID): Promise<IUser> {
     try {
-      const createdUser = await this.findUserByIdFromDb(id);
+      const findedUser = await this.findUserByIdFromDb(id);
 
-      return await this.aggregateFindedUserData(createdUser);
+      if (findedUser) {
+        return findedUser;
+      }
+
+      throw new BadRequestException(EXCEPTION_USER_ERRORS.NOT_FOUND);
     } catch (error) {
       const { message } = error as MongoError;
-      throw new BadRequestException("User not found", {
-        description: message,
-      });
+      throw new BadRequestException(
+        EXCEPTION_USER_ERRORS.INTERNAL_SERVER_ERROR,
+        {
+          description: message,
+        },
+      );
     }
   }
 
-  private async saveUserIntoDb(userData: IUser) {
-    return await new this.userModel(userData).save();
-  }
-
-  private async findUserByEmailFromDb(email: string) {
-    return await this.userModel.findOne({ email: email }).exec();
-  }
-
-  private async findUserByIdFromDb(id: UserId) {
+  private async findUserByIdFromDb(id: ID) {
     return await this.userModel.findById(id).exec();
   }
 
-  private async aggregateNewUserData(userData: IUser) {
-    const aggrAns = await this.userModel
-      .aggregate([
-        { $match: { _id: userData._id } },
-        {
-          $project: {
-            _id: 0,
-            id: "$_id",
-            email: 1,
-            name: 1,
-            contactPhone: 1,
-            role: 1,
-          },
-        },
-      ])
-      .exec();
+  private constructFilterParamsForFindAll(params: SearchUserParams) {
+    const { email, name, contactPhone } = params;
 
-    return aggrAns[0];
-  }
-
-  private constructFilterParamsForFindAll(
-    params: SearchUserParams,
-    sort: SortType = "asc",
-  ) {
-    const { email, limit, offset, name, contactPhone } = params;
-
-    const filterParams = [];
-    const matchingParams = [];
+    const filterParams: UserSearchParams = {};
 
     if (email) {
-      matchingParams.push({
-        email: { $regex: new RegExp(email, "gi") },
-      });
+      filterParams.email = { $regex: new RegExp(email, "gi") };
     }
 
     if (name) {
-      matchingParams.push({
-        name: { $regex: new RegExp(name, "gi") },
-      });
+      filterParams.name = { $regex: new RegExp(name, "gi") };
     }
 
     if (contactPhone) {
-      matchingParams.push({
-        contactPhone: { $regex: new RegExp(contactPhone, "gi") },
-      });
+      filterParams.contactPhone = { $regex: new RegExp(contactPhone, "gi") };
     }
-
-    if (matchingParams.length > 0) {
-      filterParams.push({
-        $match: {
-          $or: matchingParams,
-        },
-      });
-    }
-
-    filterParams.push({ $sort: { name: sort === "asc" ? 1 : -1 } });
-
-    if (offset > 0) {
-      filterParams.push({ $skip: offset });
-    }
-
-    if (limit > 0) {
-      filterParams.push({ $limit: limit });
-    }
-
-    filterParams.push({
-      $project: {
-        _id: 0,
-        id: "$_id",
-        email: 1,
-        name: 1,
-        contactPhone: 1,
-      },
-    });
 
     return filterParams;
-  }
-
-  private async aggregateFindedUserData(userData: IUser) {
-    const aggrAns = await this.userModel
-      .aggregate([
-        { $match: { _id: userData._id } },
-        {
-          $project: {
-            _id: 0,
-            id: "$_id",
-            email: 1,
-            password: 1,
-            name: 1,
-            contactPhone: 1,
-            role: 1,
-          },
-        },
-      ])
-      .exec();
-
-    return aggrAns[0];
   }
 }
