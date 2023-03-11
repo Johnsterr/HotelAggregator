@@ -14,7 +14,7 @@ export interface IUser {
 
 export class SearchUserParams extends SearchBaseParams {
   @IsOptional()
-  @IsEmail()
+  @IsString()
   email?: string;
 
   @IsOptional()
