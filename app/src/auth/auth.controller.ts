@@ -2,33 +2,36 @@ import {
   Controller,
   Post,
   Body,
-  Request,
-  UsePipes,
-  ValidationPipe,
-  HttpStatus,
   UseGuards,
+  HttpCode,
+  Req,
 } from "@nestjs/common";
+import { Request } from "express";
 import { AuthService } from "./auth.service";
-import { LocalAuthGuard } from "./guards/local-auth.guard";
+import { LoginDto } from "./dto/login.dto";
+import {
+  AuthenticatedGuard,
+  LoginGuard,
+} from "src/guards/authentification.guard";
 
-@Controller("api")
+@Controller("api/auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @UseGuards(LocalAuthGuard)
-  @Post("/auth/login")
-  @UsePipes(
-    new ValidationPipe({
-      errorHttpStatusCode: HttpStatus.BAD_REQUEST,
-    }),
-  )
-  login(@Request() req) {
-    return this.authService.login(req.user);
+  @HttpCode(200)
+  @Post("login")
+  @UseGuards(LoginGuard)
+  async login(@Body() dto: LoginDto) {
+    const user = await this.authService.login(dto);
+    const { email, name, contactPhone } = user;
+    return { email, name, contactPhone };
   }
 
-  @Post("/auth/logout")
-  logout() {
-    return this.authService.logout();
+  @HttpCode(200)
+  @UseGuards(AuthenticatedGuard)
+  @Post("logout")
+  logout(@Req() req: Request) {
+    return this.authService.logout(req);
   }
 }
 

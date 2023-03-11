@@ -1,44 +1,44 @@
-import { Injectable } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { compare } from "bcrypt";
-import { LoginAuthDto } from "./dto/login-auth.dto";
+import { Request } from "express";
+import { IAuthService } from "./auth.types";
 import { UserService } from "src/user/user.service";
-import { User } from "src/user/entities/user.entity";
+import { LoginDto } from "./dto/login.dto";
+import { RegisterDto } from "./dto/register.dto";
+import { EXCEPTION_USER_ERRORS } from "src/user/user.constants";
 
 @Injectable()
-export class AuthService {
-  constructor(
-    private userService: UserService,
-    private jwtService: JwtService,
-  ) {}
+export class AuthService implements IAuthService {
+  constructor(private userService: UserService) {}
 
-  login(user: any) {
-    const payload = { username: user.name, sub: user.id };
+  async register(data: RegisterDto): Promise<Omit<RegisterDto, "password">> {
+    const user = await this.userService.create(data);
+
     return {
-      access_token: this.jwtService.sign(payload),
-      ...user,
+      email: user.email,
+      name: user.name,
+      contactPhone: user.contactPhone,
     };
   }
 
-  logout() {
-    return `This action returns all auth`;
-  }
+  async login(data: LoginDto): Promise<Omit<RegisterDto, "password">> {
+    const { email, password } = data;
 
-  async validateUser(loginAuthDto: LoginAuthDto): Promise<Partial<User>> {
-    const findedUser: User = await this.userService.findByEmail(
-      loginAuthDto.email,
-    );
-    const comparedPasswordResult = await compare(
-      loginAuthDto.password,
-      findedUser.password,
-    );
+    const user = await this.userService.findByEmail(email);
 
-    if (findedUser && comparedPasswordResult) {
-      const { password, role, ...result } = findedUser;
-      return result;
+    const isValidPassword = await compare(password, user.password);
+
+    if (isValidPassword) {
+      return user;
     }
 
-    return null;
+    throw new UnauthorizedException(EXCEPTION_USER_ERRORS.BAD_REQUEST);
+  }
+
+  async logout(req: Request) {
+    req.logout((error) => {
+      console.log(error);
+    });
   }
 }
 
