@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { MongoError } from "mongodb";
@@ -34,9 +38,16 @@ export class UserService implements IUserService {
       return await this.userModel.create(userData);
     } catch (error) {
       const { message } = error as MongoError;
-      throw new BadRequestException(EXCEPTION_USER_ERRORS.NOT_CREATED, {
-        description: message,
-      });
+
+      // Сообщение от Mongo, если есть дубликат
+      // E11000 duplicate key error collection
+      if (message.indexOf("E11000 duplicate key error collection") === 0) {
+        throw new BadRequestException(EXCEPTION_USER_ERRORS.ALREADY_EXISTS);
+      }
+
+      throw new InternalServerErrorException(
+        EXCEPTION_USER_ERRORS.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

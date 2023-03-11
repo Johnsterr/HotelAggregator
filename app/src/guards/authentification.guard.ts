@@ -31,7 +31,7 @@ export class AuthenticatedGuard implements CanActivate {
       return isValid;
     }
 
-    throw new UnauthorizedException(EXCEPTION_USER_ERRORS.UNAUTHORIZED);
+    throw new UnauthorizedException(EXCEPTION_USER_ERRORS.NOT_LOGGED);
   }
 }
 

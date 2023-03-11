@@ -21,8 +21,8 @@ export class AuthController {
   @HttpCode(200)
   @Post("login")
   @UseGuards(LoginGuard)
-  async login(@Body() dto: LoginDto) {
-    const user = await this.authService.login(dto);
+  async login(@Body() body: LoginDto) {
+    const user = await this.authService.login(body);
     const { email, name, contactPhone } = user;
     return { email, name, contactPhone };
   }

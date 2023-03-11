@@ -12,5 +12,6 @@ export const EXCEPTION_USER_ERRORS = {
   BAD_REQUEST: "Wrong email or password",
   INTERNAL_SERVER_ERROR: "Internal server error",
   ALREADY_EXISTS: "User with this email is already exists",
-  UNAUTHORIZED: "Пользователь не авторизирован",
+  NOT_LOGGED: "You are not logged in to the system",
+  UNAUTHORIZED: "Wrong email or password",
 };

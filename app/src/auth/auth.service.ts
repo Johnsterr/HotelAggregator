@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { compare } from "bcrypt";
 import { Request } from "express";
-import { IAuthService } from "./auth.types";
+import { IAuthRegisterUser, IAuthService } from "./auth.types";
 import { UserService } from "src/user/user.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
@@ -11,13 +11,13 @@ import { EXCEPTION_USER_ERRORS } from "src/user/user.constants";
 export class AuthService implements IAuthService {
   constructor(private userService: UserService) {}
 
-  async register(data: RegisterDto): Promise<Omit<RegisterDto, "password">> {
-    const user = await this.userService.create(data);
+  async register(data: RegisterDto): Promise<IAuthRegisterUser> {
+    const createdUser = await this.userService.create(data);
 
     return {
-      email: user.email,
-      name: user.name,
-      contactPhone: user.contactPhone,
+      id: createdUser._id,
+      email: createdUser.email,
+      name: createdUser.name,
     };
   }
 
@@ -32,7 +32,7 @@ export class AuthService implements IAuthService {
       return user;
     }
 
-    throw new UnauthorizedException(EXCEPTION_USER_ERRORS.BAD_REQUEST);
+    throw new UnauthorizedException(EXCEPTION_USER_ERRORS.UNAUTHORIZED);
   }
 
   async logout(req: Request) {
