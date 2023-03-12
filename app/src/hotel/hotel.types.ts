@@ -23,11 +23,23 @@ interface UpdateHotelParams {
   description: string;
 }
 
+export interface ICreateHotel {
+  id: ID;
+  title: string;
+  description: string;
+}
+
+export interface IUpdateHotel {
+  id: ID;
+  title: string;
+  description: string;
+}
+
 export interface IHotelService {
-  create(data: Partial<Hotel>): Promise<Hotel>;
+  create(data: Partial<Hotel>): Promise<ICreateHotel>;
   findById(id: ID): Promise<Hotel>;
   search(params: SearchHotelParams): Promise<Hotel[]>;
-  update(id: ID, data: UpdateHotelParams): Promise<Hotel>;
+  update(id: ID, data: UpdateHotelParams): Promise<IUpdateHotel>;
 }
 
 export interface IHotelRoom {
@@ -46,8 +58,15 @@ export class SearchRoomsParams extends SearchBaseParams {
 }
 
 export interface IHotelRoomService {
-  create(dto: CreateHotelRoomDto): Promise<HotelRoom>;
+  create(
+    images: Array<Express.Multer.File>,
+    dto: CreateHotelRoomDto,
+  ): Promise<HotelRoom>;
   findById(id: ID): Promise<HotelRoom>;
   search(query: SearchRoomsParams): Promise<HotelRoom[]>;
-  update(id: ID, dto: Partial<CreateHotelRoomDto>): Promise<HotelRoom>;
+  update(
+    images: Array<Express.Multer.File>,
+    id: ID,
+    dto: Partial<CreateHotelRoomDto>,
+  ): Promise<HotelRoom>;
 }

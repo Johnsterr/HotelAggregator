@@ -13,4 +13,4 @@
 /mongo_config
 
 # Upload
-/app/upload
+/app/public/upload

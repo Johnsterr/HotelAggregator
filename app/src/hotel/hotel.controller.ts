@@ -6,19 +6,26 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
-  UsePipes,
-  ValidationPipe,
 } from "@nestjs/common";
 import { FilesInterceptor } from "@nestjs/platform-express";
-import { diskStorage } from "multer";
+import { RolesGuard } from "src/guards/roles.guard";
+import { Request } from "express";
 import { HotelService } from "./hotel.service";
 import { HotelRoomService } from "./hotel-room.service";
+import { IUser } from "src/user/user.types";
+import { SearchRoomsParams } from "./hotel.types";
+import { ID, SearchBaseParams } from "src/types/general";
+import { ValidationIdPipe } from "src/pipes/validation-id.pipe";
+import { Roles } from "src/decorators/roles.decorator";
 import { CreateHotelDto } from "./dto/create-hotel.dto";
-import { editFileName, imageFileFilter } from "src/config/img-upload";
+import { UpdateHotelDto } from "./dto/update-hotel.dto";
 import { CreateHotelRoomDto } from "./dto/create-hotel-room.dto";
 
+@UseGuards(RolesGuard)
 @Controller("api")
 export class HotelController {
   constructor(
@@ -27,145 +34,63 @@ export class HotelController {
   ) {}
 
   @Get("/common/hotel-rooms")
-  async getAllRooms(
-    @Query("hotel") hotel?,
-    @Query("limit") limit?,
-    @Query("offset") offset?,
+  async getHotelRooms(
+    @Req() req: Request & { user: IUser },
+    @Query() query: SearchRoomsParams,
   ) {
-    limit = limit ? parseInt(limit) : 100;
-    offset = offset ? parseInt(offset) : 0;
-    const isEnabled = true;
-    return await this.hotelRoomService.search({
-      hotel,
-      limit,
-      offset,
-      isEnabled,
-    });
+    let queryParams = { ...query };
+
+    if (!req.isAuthenticated() || req?.user?.role === "client") {
+      queryParams = { ...queryParams, isEnabled: true };
+    }
+
+    return await this.hotelRoomService.search(queryParams);
   }
 
   @Get("/common/hotel-rooms/:id")
-  async getHotelRoom(@Param() params) {
-    const id = params.id;
+  async getHotelRoomById(@Param("id", ValidationIdPipe) id: ID) {
     return await this.hotelRoomService.findById(id);
   }
 
-  /*
-      Hotels
-  */
-  // JWT & AdminRole Guards
-  @Post("/admin/hotels/")
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async addHotel(@Body() body: CreateHotelDto) {
-    const { title, description } = body;
-    return await this.hotelService.create({ title, description });
+  @Post("/admin/hotels")
+  @Roles("admin")
+  async createHotel(@Body() body: CreateHotelDto) {
+    return await this.hotelService.create(body);
   }
 
-  // JWT & AdminRole Guards
-  @Get("/admin/hotels/:id")
-  async getHotelById(@Param() params) {
-    const id = params.id;
-    return await this.hotelService.findById(id);
+  @Get("/admin/hotels")
+  @Roles("admin")
+  async getHotels(@Query() query: SearchBaseParams) {
+    return await this.hotelService.search(query);
   }
 
-  // JWT & AdminRole Guards
-  @Get("/admin/hotels/")
-  async getAllHotels(@Query("limit") limit?, @Query("offset") offset?) {
-    limit = limit ? parseInt(limit) : 100;
-    offset = offset ? parseInt(offset) : 0;
-    return await this.hotelService.search({ limit, offset });
-  }
-
-  // JWT & AdminRole Guards
   @Put("/admin/hotels/:id")
+  @Roles("admin")
   async updateHotel(
-    @Param() params,
-    @Body() hotel: { title: string; description: string },
+    @Param("id", ValidationIdPipe) id: ID,
+    @Body() body: UpdateHotelDto,
   ) {
-    const id = params.id;
-    return await this.hotelService.update(id, hotel);
+    return await this.hotelService.update(id, body);
   }
 
-  /*
-      Hotel Rooms
-  */
-  // JWT & AdminRole Guards
-  @Post("/admin/hotel-rooms/")
-  @UseInterceptors(
-    FilesInterceptor("images", 5, {
-      storage: diskStorage({
-        destination: "./upload/rooms-imgs",
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async addHotelRoom(
-    @UploadedFiles() files: Array<Express.Multer.File>,
+  @Post("/admin/hotel-rooms")
+  @Roles("admin")
+  @UseInterceptors(FilesInterceptor("images"))
+  async creatHotelRoom(
+    @UploadedFiles() images: Array<Express.Multer.File>,
     @Body() body: CreateHotelRoomDto,
   ) {
-    const { description, hotelId } = body;
-    const images = files.map((file) => file.path);
-    const isEnabled = true;
-    return await this.hotelRoomService.create({
-      description,
-      hotel: hotelId,
-      images,
-      isEnabled,
-    });
+    return await this.hotelRoomService.create(images, body);
   }
 
-  // JWT & AdminRole Guards
-  @Get("/admin/hotel-rooms/:id")
-  async getHotelRoomById(@Param() params) {
-    const id = params.id;
-    return await this.hotelRoomService.findById(id);
-  }
-
-  // JWT & AdminRole Guards
-  @Get("/admin/hotel-rooms/")
-  async getAllHotelRooms(
-    @Query("hotel") hotel?,
-    @Query("limit") limit?,
-    @Query("offset") offset?,
-  ) {
-    limit = limit ? parseInt(limit) : 100;
-    offset = offset ? parseInt(offset) : 0;
-    const isEnabled = true;
-    return await this.hotelRoomService.search({
-      hotel,
-      limit,
-      offset,
-      isEnabled,
-    });
-  }
-
-  // JWT & AdminRole Guards
   @Put("/admin/hotel-rooms/:id")
-  @UseInterceptors(
-    FilesInterceptor("images", 5, {
-      storage: diskStorage({
-        destination: "./upload/rooms-imgs",
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
+  @Roles("admin")
+  @UseInterceptors(FilesInterceptor("images"))
   async updateHotelRoom(
-    @Param() params,
-    @UploadedFiles() files: Array<Express.Multer.File>,
-    @Body() body,
+    @UploadedFiles() images: Express.Multer.File[],
+    @Param("id", ValidationIdPipe) id: ID,
+    @Body() body: CreateHotelRoomDto,
   ) {
-    const isEnabled = true;
-    const images = files.map((file) => file.path);
-    const id = params.id;
-    const { description, hotelId } = body;
-    const hotel = hotelId;
-    return await this.hotelRoomService.update(id, {
-      description,
-      hotel,
-      images,
-      isEnabled,
-    });
+    return await this.hotelRoomService.update(images, id, body);
   }
 }

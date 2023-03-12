@@ -1,7 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { IHotelService, SearchHotelParams } from "./hotel.types";
+import {
+  ICreateHotel,
+  IHotelService,
+  IUpdateHotel,
+  SearchHotelParams,
+} from "./hotel.types";
 import { Hotel, HotelDocument } from "./entities/hotel.entity";
 import { CreateHotelDto } from "./dto/create-hotel.dto";
 import { ID } from "src/types/general";
@@ -14,8 +19,14 @@ export class HotelService implements IHotelService {
     @InjectModel(Hotel.name) private hotelModel: Model<HotelDocument>,
   ) {}
 
-  async create(dto: CreateHotelDto): Promise<Hotel> {
-    return await this.hotelModel.create(dto);
+  async create(dto: CreateHotelDto): Promise<ICreateHotel> {
+    const createdHotel = await this.hotelModel.create(dto);
+
+    return {
+      id: createdHotel._id,
+      title: createdHotel.title,
+      description: createdHotel.description,
+    };
   }
 
   async findById(id: ID): Promise<Hotel> {
@@ -37,7 +48,17 @@ export class HotelService implements IHotelService {
       .select(selectingHotelParams);
   }
 
-  async update(id: ID, dto: UpdateHotelDto): Promise<Hotel> {
-    return await this.hotelModel.findOneAndUpdate({ _id: id }, dto);
+  async update(id: ID, dto: UpdateHotelDto): Promise<IUpdateHotel> {
+    const updatedHotel = await this.hotelModel.findOneAndUpdate(
+      { _id: id },
+      dto,
+      { timestamps: { updatedAt: true } },
+    );
+
+    return {
+      id: updatedHotel._id,
+      title: updatedHotel.title,
+      description: updatedHotel.description,
+    };
   }
 }

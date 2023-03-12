@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 import { ID, SearchBaseParams } from "src/types/general";
 
 export type UserRole = "client" | "admin" | "manager";

@@ -4,7 +4,7 @@ import { IHotel } from "../hotel.types";
 
 export type HotelDocument = Hotel & Document;
 
-@Schema()
+@Schema({ timestamps: true })
 export class Hotel implements Omit<IHotel, "_id"> {
   @Prop({ required: true })
   public title: string;

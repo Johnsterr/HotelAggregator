@@ -5,7 +5,7 @@ import { Hotel } from "./hotel.entity";
 
 export type HotelRoomDocument = HotelRoom & Document;
 
-@Schema()
+@Schema({ timestamps: true })
 export class HotelRoom implements Omit<IHotelRoom, "_id"> {
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "Hotel" })
   public hotel: Hotel;
@@ -16,10 +16,10 @@ export class HotelRoom implements Omit<IHotelRoom, "_id"> {
   @Prop({ type: [String] })
   public images: string[];
 
-  @Prop({ required: true, type: Date, default: new Date().toISOString() })
+  @Prop({ required: true, type: Date, default: new Date() })
   public createdAt: Date;
 
-  @Prop({ required: true, type: Date, default: new Date().toISOString() })
+  @Prop({ required: true, type: Date, default: new Date() })
   public updatedAt: Date;
 
   @Prop({ required: true, type: Boolean, default: true })
