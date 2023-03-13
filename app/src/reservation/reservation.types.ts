@@ -1,7 +1,7 @@
 import { Type } from "class-transformer";
 import { IsDate, IsOptional } from "class-validator";
 import { ID, SearchBaseParams } from "src/types/general";
-import { Reservation } from "./entites/reservation.entity";
+import { Reservation } from "./entities/reservation.entity";
 import { User } from "src/user/entities/user.entity";
 import { Hotel } from "src/hotel/entities/hotel.entity";
 import { HotelRoom } from "src/hotel/entities/hotel-room.entity";

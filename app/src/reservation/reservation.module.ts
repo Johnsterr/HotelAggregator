@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ReservationService } from "./reservation.service";
 import { ReservationController } from "./reservation.controller";
-import { Reservation, ReservationSchema } from "./entites/reservation.entity";
+import { Reservation, ReservationSchema } from "./entities/reservation.entity";
 import { HotelRoomService } from "src/hotel/hotel-room.service";
 import {
   HotelRoom,

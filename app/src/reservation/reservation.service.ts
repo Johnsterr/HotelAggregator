@@ -7,7 +7,10 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { differenceInDays } from "date-fns";
-import { Reservation, ReservationDocument } from "./entites/reservation.entity";
+import {
+  Reservation,
+  ReservationDocument,
+} from "./entities/reservation.entity";
 import {
   IReservationService,
   ISearchReservationParam,
