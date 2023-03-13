@@ -6,13 +6,13 @@ import { Message } from "./message.entity";
 
 export type SupportRequestDocument = SupportRequest & Document;
 
-@Schema()
+@Schema({ timestamps: true })
 export class SupportRequest implements Omit<ISupportRequest, "_id"> {
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "User" })
   public user: User;
 
   @Prop({ required: true, type: Date, default: new Date() })
-  public createAt: Date;
+  public createdAt: Date;
 
   @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: "Message" })
   public messages: [Message];
