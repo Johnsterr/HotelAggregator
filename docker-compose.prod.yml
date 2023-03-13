@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mongodb:
+    container_name: "mongo_db"
+    image: mongo:latest
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongo:/data/db
+      - ./mongo_config:/data/configdb
+
+  backend:
+    container_name: "hotelaggregator"
+    build:
+      context: ./app
+      dockerfile: Dockerfile.prod
+    image: "hotelaggregator_backend"
+    ports:
+      - 3000:3000
+      - 9229:9229
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app
+      - /app/node_modules
+
+volumes:
+  mongo:
+  mongo_config:
