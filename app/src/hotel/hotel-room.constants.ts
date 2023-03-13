@@ -15,3 +15,7 @@ export const populatingHotelRoomParam = {
     images: 1,
   },
 };
+
+export const EXCEPTION_HOTEL_ROOM_ERRORS = {
+  NOT_EXIST: "Hotel Room with this Id not exists",
+};

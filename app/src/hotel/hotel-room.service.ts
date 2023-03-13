@@ -92,6 +92,11 @@ export class HotelRoomService implements IHotelRoomService {
     return hotelRooms;
   }
 
+  async findOne(id: ID): Promise<HotelRoom> {
+    const hotelRoom = this.hotelRoomModel.findOne({ _id: id });
+    return hotelRoom;
+  }
+
   private async saveImages(hotelRoomId: ID, files: Array<Express.Multer.File>) {
     if (!files.length) {
       return [];

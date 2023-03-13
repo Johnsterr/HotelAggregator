@@ -36,7 +36,7 @@ export class ReservationService implements IReservationService {
       const reservation = await this.reservationModel.create(dto);
       return await this.findById(reservation._id);
     } else {
-      throw new NotFoundException(
+      throw new BadRequestException(
         EXCEPTION_RESERVATION_ERRORS.ROOM_IS_OCCUPIED,
       );
     }
@@ -67,23 +67,27 @@ export class ReservationService implements IReservationService {
     return resultReservations;
   }
 
-  async removeReservation(room: ID, user?: ID): Promise<Reservation> {
+  async removeReservation(room: ID, user?: ID): Promise<Reservation | any> {
     const reservation = await this.reservationModel.findById(room);
     if (reservation) {
       if (user) {
         if (String(reservation.user) === user) {
-          return await this.reservationModel
+          const deletedReservation = await this.reservationModel
             .findByIdAndRemove(room)
             .select(selectingReservationParams)
             .populate(populatingHotelParam)
             .populate(populatingHotelRoomParam);
+
+          return [];
         }
       } else {
-        return await this.reservationModel
+        const deletedReservation = await this.reservationModel
           .findByIdAndRemove(room)
           .select(selectingReservationParams)
           .populate(populatingHotelParam)
           .populate(populatingHotelRoomParam);
+
+        return [];
       }
 
       throw new ForbiddenException(EXCEPTION_RESERVATION_ERRORS.USER_NOT_VALID);
@@ -116,42 +120,54 @@ export class ReservationService implements IReservationService {
       );
     }
 
-    // Дата начала и окончания брони - это дата начала в запросе
-    if (!this.isDateStartInInterval(dto)) {
-      // Дата начала и окончания брони - это дата окончания в запросе
-      if (!this.isDateEndInInterval(dto)) {
-        // Дата начала брони - это дата начала в запросе
-        // Дата окончания брони - это дата окончания в запросе
-        if (!this.isDateStartAndDateEndInInterval(dto)) {
-          // Если не нашлось не одной подходящей брони, тогда можно бронировать
-          return true;
-        }
-      }
+    let isDatesReservation = false;
+
+    if (
+      !(await this.isDateStartInInterval(dto)) &&
+      !(await this.isDateEndInInterval(dto)) &&
+      !(await this.isDateStartAndDateEndInInterval(dto))
+    ) {
+      isDatesReservation = true;
     }
-    return false;
+
+    return isDatesReservation;
   }
 
   private async isDateStartInInterval(dto: CreateReservationDto) {
-    return await this.reservationModel.findOne({
+    const room = await this.reservationModel.findOne({
       room: dto.room,
-      dateStart: { $gte: dto.dateStart },
-      dateEnd: { $lte: dto.dateStart },
+      $and: [
+        { dateStart: { $lte: dto.dateStart } },
+        { dateEnd: { $gt: dto.dateStart } },
+      ],
     });
+
+    return room;
   }
 
   private async isDateEndInInterval(dto: CreateReservationDto) {
-    return await this.reservationModel.findOne({
+    const room = await this.reservationModel.findOne({
       room: dto.room,
-      dateStart: { $gte: dto.dateEnd },
-      dateEnd: { $lte: dto.dateEnd },
+      $and: [
+        { dateStart: { $lt: dto.dateEnd } },
+        { dateEnd: { $gte: dto.dateEnd } },
+      ],
     });
+
+    return room;
   }
 
   private async isDateStartAndDateEndInInterval(dto: CreateReservationDto) {
-    return await this.reservationModel.findOne({
+    const room = await this.reservationModel.findOne({
       room: dto.room,
-      dateStart: { $gte: dto.dateStart },
-      dateEnd: { $lte: dto.dateEnd },
+      $and: [
+        { dateStart: { $lte: dto.dateStart } },
+        { dateStart: { $lt: dto.dateEnd } },
+        { dateEnd: { $gte: dto.dateEnd } },
+        { dateEnd: { $gt: dto.dateStart } },
+      ],
     });
+
+    return room;
   }
 }

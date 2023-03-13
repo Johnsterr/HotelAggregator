@@ -8,6 +8,7 @@ import { buildMongoConfig } from "./config/mongo";
 import { HotelModule } from "./hotel/hotel.module";
 import { UserModule } from "./user/user.module";
 import { AuthModule } from "./auth/auth.module";
+import { ReservationModule } from "./reservation/reservation.module";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AuthModule } from "./auth/auth.module";
     HotelModule,
     AuthModule,
     UserModule,
+    ReservationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
