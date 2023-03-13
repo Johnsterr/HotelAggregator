@@ -12,6 +12,18 @@ docker-compose -f docker-compose.dev.yml up -d
 docker-compose -f docker-compose.dev.yml down
 ```
 
+Для запуска проекта в режиме продакшена:
+
+```
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+Для остановки режима продакшена:
+
+```
+docker-compose -f docker-compose.prod.yml down
+```
+
 ## Описание проекта
 
 Дипломный проект представляет собой сайт-агрегатор просмотра и бронирования гостиниц. Ваша задача заключается в разработке бэкенда для сайта-агрегатора с реализацией возможности бронирования гостиниц на диапазон дат.
